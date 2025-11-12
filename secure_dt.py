@@ -1,5 +1,3 @@
-
-
 d = 3
 classes = [0,1]
 features = ["variance", "skewness", "curtosis", "entropy"]
@@ -16,4 +14,4 @@ def get_bit(number, i):
 
 for j in range(0, 2**d - 1):
     b = G[j+1] - 1
-    
+
