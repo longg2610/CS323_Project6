@@ -1,13 +1,13 @@
 import random
-d = 3
-classes = ["", "Yes", "No"]
+# d = 3
+# classes = ["", "Yes", "No"]
     
-H = [-1, 6, 2, 4, 3, 1, 5, 7]  #H(1) = variance, etc.
-w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
-G = [-1,1,0,1,0,1,0,1,0]  # leaf  1 has class 1, leaf 2 class 0,...
+# H = [-1, 6, 2, 4, 3, 1, 5, 7]  #H(1) = variance, etc.
+# w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
+# G = [-1,1,0,1,0,1,0,1,0]  # leaf  1 has class 1, leaf 2 class 0,...
 
-features = ["", "Pregnancies" , "Glucose", "BloodPressure", "Insulin", "BMI", "DiabetesPedigreeFunction" , "Age"]     # input follows this format
-x = (-1, 4, 119, 69, 19, 30, 0.1, 29)   
+# features = ["", "Pregnancies" , "Glucose", "BloodPressure", "Insulin", "BMI", "DiabetesPedigreeFunction" , "Age"]     # input follows this format
+# x = (-1, 4, 119, 69, 19, 30, 0.1, 29)   
 
 
 # Class Example instance
@@ -19,7 +19,25 @@ x = (-1, 4, 119, 69, 19, 30, 0.1, 29)
 
 
 def parse(filename):
-    
+    with open(filename, 'r') as f:
+        d = int(f.readline())
+        classes = [""] + (f.readline().split())
+        features = [""] + (f.readline().split())
+
+        H = [-1] + f.readline().split()
+        for i in range (1, len(H)):
+            H[i] = features.index(H[i])     # construct mapping
+        G = [""] + (f.readline().split())
+        for i in range (1, len(G)):
+            G[i] = classes.index(G[i]) - 1     # construct mapping
+
+        w = [-1] + list(map(float, f.readline().split()))
+        x = [-1] + list(map(float, f.readline().split()))
+    f.close()
+    return [d, classes, features, H, G, w, x]
+
+inputs = parse("input.txt")
+d, classes, features, H, G, w, x = inputs
 
 """
 get the i'th least significant bit of number, i starts from 1 
