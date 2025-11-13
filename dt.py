@@ -1,7 +1,23 @@
+'''
+Long Pham and Tanvi Shegaonkar
+Project 6 : Secure Decision Tree Evaluation
+11/14/2025
+
+This program securely evaluates a decision tree with continuous features 
+with Secure Multiparty Computation. 
+
+'''
 import random
+
+
 d = 3
+
+# all inputs are indexed from 1. Thus, a placeholder value is inserted at index 0
+
+# class labels
 classes = ["", "Yes", "No"]
     
+# 
 H = [-1, 6, 2, 4, 3, 1, 5, 7]  #H(1) = variance, etc.
 w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
 G = [-1,1,0,1,0,1,0,1,0]  # leaf  1 has class 1, leaf 2 class 0,...
@@ -18,11 +34,12 @@ x = (-1, 4, 119, 69, 19, 30, 0.1, 29)
 # x = (-1,0,0,0)
 
 
-def parse(filename):
+#def parse(filename):
     
 
 """
 get the i'th least significant bit of number, i starts from 1 
+
 """
 def get_bit(number, i):
     return ((number >> (i-1)) & 0x1)
