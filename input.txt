@@ -1,7 +1,7 @@
 3  
-Yes No     
+Yes No AbsolutelyYes AbsolutelyNo Maybe 
 Pregnancies Glucose BloodPressure Insulin BMI DiabetesPedigreeFunction Age 
 DiabetesPedigreeFunction Glucose Insulin BloodPressure Pregnancies BMI Age  
-Yes No Yes No Yes No Yes No                                                
+AbsolutelyYes No Yes Maybe AbsolutelyNo No AbsolutelyNo Maybe                                                
 0.15 120 20 70 5 28 30                                                       
-4 119 69 19 30 0.1 29                                                  
+4 120 70 19 27 0.14 29                                            

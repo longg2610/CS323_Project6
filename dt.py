@@ -8,19 +8,20 @@ with Secure Multiparty Computation.
 
 '''
 import random
+import math
 # 
 
-d = 3
-# 
-# all inputs are indexed from 1. Thus, a placeholder value is inserted at index 0
+# d = 3
+# # 
+# # all inputs are indexed from 1. Thus, a placeholder value is inserted at index 0
 
-# class labels
-classes = ["", "Yes", "No"]
+# # class labels
+# classes = ["", "Yes", "No"]
     
-# 
-H = [-1, 6, 2, 4, 3, 1, 5, 7]  #H(1) = variance, etc.
-w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
-G = [-1,1,0,1,0,1,0,1,0]  # leaf  1 has class 1, leaf 2 class 0,...
+# # 
+# H = [-1, 6, 2, 4, 3, 1, 5, 7]  #H(1) = variance, etc.
+# w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
+# G = [-1,1,0,1,0,1,0,1,0]  # leaf  1 has class 1, leaf 2 class 0,...
 
 # features = ["", "Pregnancies" , "Glucose", "BloodPressure", "Insulin", "BMI", "DiabetesPedigreeFunction" , "Age"]     # input follows this format
 # x = (-1, 4, 119, 69, 19, 30, 0.1, 29)   
@@ -74,48 +75,49 @@ def get_z_H_values():
     x_H = [-1]
     for attribute_index in H[1:]:
         x_H.append(x[attribute_index])
-    # print(w)
-    # print(x_H)
+
     z_i = [-1]
     for i in range(1, len(H)):
         z_i.append(int(x_H[i] >= w[i]))
-    # print(z_i)
     z_i_shares = [get_random_shares(z) for z in z_i]
-    # print(z_i_shares)
     return z_i_shares
 
 def main():
     z_i_shares = get_z_H_values()           # z_i is good
-    # print("z_i: ", z_i_shares)
-
-    sigma_sum = []
+    alpha = math.ceil(math.log2(len(classes)-1))
+    sigma =  [[[None for _ in range(2)] for _ in range(2**d)] for _ in range(alpha)]
     for j in range(2**d):
-        print(j)
         b = G[j + 1]
-        y_j_r = [0, b]
+        for r in range(1, alpha+1):
+            y_j_r = [0, get_bit(b, r)]
+            sigma[r-1][j] = y_j_r
+
         u = 1
         s = d
         while(s > 0):
-            # print(z_i_shares, "shouldnt change")
-            # print("y_j_r: ", y_j_r)
-            # print("z_", u,  ": ", z_i_shares[u])
-            # print("j_",s," ", get_bit(j, s))
             z_sum = z_i_shares[u].copy()
-            z_sum[1]  = (z_sum[1] + get_bit(j,s)) % 2   # add j_s to Bobby's bit
-            # print("SUM ", z_sum)
-            y_j_r = (y_j_r[0] ^ y_j_r[1]) * (z_sum[0] ^ z_sum[1])     # multiply XOR of shares of y_j_r with XOR of shares of z_u + j_s  
-            # print("y_j_r end value: ", y_j_r)
-            y_j_r = get_random_shares(y_j_r)
+            z_sum[1]  = (z_sum[1] + get_bit(j,s)) % 2   # add j_s to Bobby's bit -> z_u + j_s
+            for r in range(1, alpha + 1):
+                y_j_r = sigma[r-1][j]
+                sigma[r-1][j] = get_random_shares((y_j_r[0] ^ y_j_r[1]) * (z_sum[0] ^ z_sum[1])) # multiply XOR of shares of y_j_r with XOR of shares of z_u + j_s  
 
             # update u and s
             u = 2*u + get_bit(j, s)
             s -= 1
 
-        # print("End Loop: Shares of y_j_r:", y_j_r)
-        sigma_sum.append(y_j_r)
-    print(sigma_sum)
-    class_label = [x[0]^x[1] for x in sigma_sum]
-    print ("Class Label", classes[sum(class_label) + 1])
-        
+    # print(sigma)
+
+    label_bits = []
+    for r in range(1, alpha + 1):
+        sigma_r = sigma[r-1].copy()
+        class_index_bit = sum([x[0]^x[1] for x in sigma_r])
+        label_bits.append(class_index_bit)
+        # print("bit ", r, ": ", class_index_bit)
+    
+    class_index = 0
+    for i in range(len(label_bits)):
+        class_index += (2**i) * label_bits[i]
+
+    print("Instance", x, "is classified as", classes[class_index + 1])
 
 main()     
