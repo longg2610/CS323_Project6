@@ -15,6 +15,29 @@ get the i'th least significant bit of number
 def get_bit(number, i):
     return ((number >> i) & 0x1)
 
-for j in range(0, 2**d - 1):
-    b = G[j+1] - 1
+
+def get_random_shares(combination):
+    A_share = random.sample(range(2), 1)[0]
+    B_share = A_share ^ combination
+    return (A_share, B_share)
+
+def get_z_H_values(): 
+    x_H = [-1]
+    for attribute_index in H[1:]:
+        x_H.append(x[attribute_index])
+
+    print(w)
+    print(x_H)
+
+    z_i = [-1]
+    for i in range(1, len(H)):
+        z_i.append(int(x_H[i] >= w[i]))
+    print(z_i)
+
+    z_i_shares = [get_random_shares(z) for z in z_i]
+    print(z_i_shares)
+    
+get_z_H_values()
+
+
 
