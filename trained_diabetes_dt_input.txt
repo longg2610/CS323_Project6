@@ -1,0 +1,6 @@
+3  
+No Yes     
+Pregnancies Glucose BloodPressure Insulin BMI DiabetesPedigreeFunction Age 
+Glucose BMI BMI DiabetesPedigreeFunction Age Age Glucose  
+No No No No No Yes Yes Yes                                                
+144.5 26.35 29.95 0.675 30.5 29.5 157.5 
