@@ -1,8 +1,7 @@
-3   # tree depth
-Yes No      # class labels
-DiabetesPedigreeFunction Glucose Insulin BloodPressure Pregnancies BMI Age   # tree (internal) node order (left to right)
-Yes No Yes No Yes No Yes No                                                  # leaf node order (left to right)
-0.15 120 20 70 5 28 30                                                       # thresholds (in tree node order)
-Pregnancies Glucose BloodPressure Insulin BMI DiabetesPedigreeFunction Age   # input formatting
-4 119 69 19 30 0.1 29                                                        # input
-
+3  
+Yes No     
+Pregnancies Glucose BloodPressure Insulin BMI DiabetesPedigreeFunction Age 
+DiabetesPedigreeFunction Glucose Insulin BloodPressure Pregnancies BMI Age  
+Yes No Yes No Yes No Yes No                                                
+0.15 120 20 70 5 28 30                                                       
+4 119 69 19 30 0.1 29                                                  
