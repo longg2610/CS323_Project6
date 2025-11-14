@@ -26,7 +26,7 @@ Part 1: Implement Secure Decision Tree Evaluation
 
 
 1) evaluation(x,w,classes,G,H,d)
-    - can be called independantly from Secure_Tree_Evaluation
+    - can be called independently from Secure_Tree_Evaluation
     - implements secure evaluation with the following helper functions
         - parse(filename)
         - get_bit(number,i)
@@ -45,7 +45,7 @@ Part 1: Implement Secure Decision Tree Evaluation
 """
 parse(filename):
 Input: file containing tree parameters in specified format
-Ouputs:
+Outputs:
     - int d = depth of tree
     - string list classes = list of class labels
     - string list features = list of features
@@ -60,10 +60,10 @@ def parse(filename):
         features = [""] + (f.readline().split())
         H = [-1] + f.readline().split()
         for i in range (1, len(H)):
-            H[i] = features.index(H[i])     # construct mapping
+            H[i] = features.index(H[i])        # construct mapping from internal node index to features
         G = [""] + (f.readline().split())
         for i in range (1, len(G)):
-            G[i] = classes.index(G[i]) - 1     # construct mapping
+            G[i] = classes.index(G[i]) - 1     # construct mapping from leaf index to class labels
         w = [-1] + list(map(float, f.readline().split()))
     f.close()
     return [d, classes, features, H, G, w]
@@ -71,6 +71,8 @@ def parse(filename):
 """
 get_bit(number, i)
 - returns the i'th least significant bit of number, i starts from 1 
+- input: number to get its bit from, index i of the bit (lsb is at i=1)
+- output: bit i of number
 """
 def get_bit(number, i):
     return ((number >> (i-1)) & 0x1)
@@ -90,24 +92,35 @@ def get_random_shares(value):
 
 """ 
 evaluation(x,w,classes,G,H,d)
-
-
+- classify instance x given
+- input:
+    x: instance to be classified
+    w: mapping of thresholds to internal nodes
+    classes: list of class labels
+    G: mapping of leaves index to class labels
+    H: mapping of internal nodes index to attributes
+    d: depth of tree
+- output: x's classification
 """
 
 def evaluation(x,w,classes,G,H,d):
+    # get Alice's input H(i) corresponding to leaf i using non-private Oblivious Input Selection
     x_H = [-1]
     for attribute_index in H[1:]:
         x_H.append(x[attribute_index])
 
+    # get comparison result for leaf i using non-private Distributed Comparison
     z_i = [-1]
     for i in range(1, len(H)):
         z_i.append(int(x_H[i] <= w[i]))
-
     z_i_shares = [get_random_shares(z) for z in z_i]
     
+    alpha = math.ceil(math.log2(len(classes)-1))    # number of bits needed to represent all classes
     
-    alpha = math.ceil(math.log2(len(classes)-1))
-    sigma =  [[[None for _ in range(2)] for _ in range(2**d)] for _ in range(alpha)]
+    # contains r lists corresponding to r bits of the class label
+    # each of which contains j pairs corresponding to the number of leaves
+    # each pair is of form [Alice's share, Bob's share]
+    sigma =  [[[None for _ in range(2)] for _ in range(2**d)] for _ in range(alpha)]    
     for j in range(2**d):
         b = G[j + 1]
         for r in range(1, alpha+1):
@@ -117,45 +130,44 @@ def evaluation(x,w,classes,G,H,d):
         u = 1
         s = d
         while(s > 0):
-            z_sum = z_i_shares[u].copy()
+            z_sum = z_i_shares[u].copy()        # z_u
             z_sum[1]  = (z_sum[1] + get_bit(j,s)) % 2   # add j_s to Bobby's bit -> z_u + j_s
             for r in range(1, alpha + 1):
                 y_j_r = sigma[r-1][j]
                 
-                # multiply XOR of shares of y_j_r with XOR of shares of z_u + j_s  
+                # multiply XOR of shares of y_j_r with XOR of shares of z_u + j_s, then break again into Alice's and Bob's shares
                 sigma[r-1][j] = get_random_shares((y_j_r[0] ^ y_j_r[1]) * (z_sum[0] ^ z_sum[1]))
 
             # update u and s
             u = 2*u + get_bit(j, s)
             s -= 1
 
-    label_bits = []
+    label_bits = []     # contains bit representation of class label
     for r in range(1, alpha + 1):
         sigma_r = sigma[r-1].copy()
-        class_index_bit = sum([x[0]^x[1] for x in sigma_r])
-        label_bits.append(class_index_bit)
-        # print("bit ", r, ": ", class_index_bit)
+        bit = sum([x[0]^x[1] for x in sigma_r])
+        label_bits.append(bit)
     
+    # convert bit representation to class index
     class_index = 0
     for i in range(len(label_bits)):
         class_index += (2**i) * label_bits[i]
 
-    print("Instance", x, "is classified as", classes[class_index + 1])
-    return(class_index)
+    print("Instance", x[1:], "is classified as", classes[class_index + 1])
+    return class_index
 
 
 
 def Secure_Tree_Evaluation (parameter_file, input_df):
-    
     tree_parameters = parse(parameter_file)
     d, classes, features, H, G, w = tree_parameters
-   
+    print("Input order:\n", features[1:])
     output = []
     
     #iterates over input_df and evaluates tree for each instance
     for i in range(len(input_df)):
         instance = input_df.iloc[i].tolist()
-        instance.insert(0,-1)
+        instance.insert(0,-1)   # dummy value at the front
         class_label = evaluation(instance,w,classes,G,H,d)
         output.append(class_label)
     result = pd.Series(output)
@@ -226,7 +238,7 @@ of decision tree evaluation in a secure setting.
 
 We randomly generate nodes, weights, and class labels to 
 create full decision trees of varying depths. 
-Runtime is measure in milliseconds for evalutioan
+Runtime is measured in milliseconds for evaluation
 of each tree for the same instance
 
 
@@ -241,6 +253,7 @@ x = [-1, 4, 119, 69, 19, 30, 0.1, 29]
 
 
 depths = [3,5,7,9,11,15]
+depths = [3,4,5,6,7,8,9,10,11,12,13,14,15]
 for d in depths:
     num_leaf = 2**d
     num_internal = num_leaf -1
@@ -263,5 +276,19 @@ for d in depths:
     runtime.append(final_time)
     print("Runtime d =", d, ": ", final_time, " ms")
 
+def plot(depths, runtime):
+    # Create line chart
+    plt.figure(figsize=(10,7))
+    plt.plot(depths, runtime, marker='o', linestyle='-', color='blue', label='Depths vs Runtime')
 
+    # Labels and title
+    plt.xlabel("Depth")
+    plt.ylabel("Runtime (ms)")
+    plt.title("Runtimes with different Decision Tree Depths")
+    plt.grid(True)
+    plt.legend()
 
+    # Show the plot
+    plt.tight_layout()
+    plt.savefig("./Runtime.png")
+plot(depths, runtime)
