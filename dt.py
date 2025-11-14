@@ -23,37 +23,24 @@ from time import time
 
 """ 
 Part 1: Implement Secure Decision Tree Evaluation
-Input - file specifying parameters
+
+
+1) evaluation(x,w,classes,G,H,d)
+    - can be called independantly from Secure_Tree_Evaluation
+    - implements secure evaluation with the following helper functions
+        - parse(filename)
+        - get_bit(number,i)
+        - get_random_shares(value,)
+        
+2) Secure_Tree_Evaluation (parameter_file, input_df)
+    - parses parameter_file specifying tree in format specified in README.md
+    - evaluates decision tree specified for multiple instances stored in input_df
+
 
 """
-    
-"""
-# d = 3
-# # 
-# # all inputs are indexed from 1. Thus, a placeholder value is inserted at index 0
-
-# # class labels
-# classes = ["", "Yes", "No"]
-    
-# # H maps internal nodes to feature indices, H(1) = index of Pregnancies in features array
-# H = [-1, 6, 2, 4, 3, 1, 5, 7]  
-# w contains the thresholds/ weights for each internal node in H
-# w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
-# G maps leaf indices to class label indices
-# G = [-1,1,0,1,0,1,0,1,0] 
-
-# features = ["", "Pregnancies" , "Glucose", "BloodPressure", "Insulin", "BMI", "DiabetesPedigreeFunction" , "Age"]     # input follows this format
-# x = (-1, 4, 119, 69, 19, 30, 0.1, 29)   
 
 
-# Class Example instance
-# d = 2
-# G = [-1,0,1,0,1]
-# H = [-1,2,1,3]
-# w = [-1,1,1,1]
-# x = (-1,0,0,0)
 
-"""
 
 """
 parse(filename):
@@ -89,11 +76,9 @@ def get_bit(number, i):
     return ((number >> (i-1)) & 0x1)
 
 """
-get_random_shares (value, l)
+get_random_shares (value)
 - randomly generates bitwise shares by XOR-ing the random value with value
 input: int value
-       int l = bit length
-
 output: list of two bitwise shares of value 
 
 """
@@ -102,14 +87,14 @@ def get_random_shares(value):
     B_share = A_share ^ value
     return [A_share, B_share]
 
+
 """ 
-get_z_H_values()
-for each non-leaf node, this function evaluates if the value
-of input vector is less than or equal to the threshold of 
-its associated node. 
-Outputs: bitwise shares of length l
+evaluation(x,w,classes,G,H,d)
+
+
 """
-def get_z_H_values(x,w,H): 
+
+def evaluation(x,w,classes,G,H,d):
     x_H = [-1]
     for attribute_index in H[1:]:
         x_H.append(x[attribute_index])
@@ -117,12 +102,10 @@ def get_z_H_values(x,w,H):
     z_i = [-1]
     for i in range(1, len(H)):
         z_i.append(int(x_H[i] <= w[i]))
-    # print(z_i)
-    z_i_shares = [get_random_shares(z) for z in z_i]
-    return z_i_shares
 
-def evaluation(x,w,classes,G,H,d):
-    z_i_shares = get_z_H_values(x,w,H)           # z_i is good
+    z_i_shares = [get_random_shares(z) for z in z_i]
+    
+    
     alpha = math.ceil(math.log2(len(classes)-1))
     sigma =  [[[None for _ in range(2)] for _ in range(2**d)] for _ in range(alpha)]
     for j in range(2**d):
@@ -146,8 +129,6 @@ def evaluation(x,w,classes,G,H,d):
             u = 2*u + get_bit(j, s)
             s -= 1
 
-    # print(sigma)
-
     label_bits = []
     for r in range(1, alpha + 1):
         sigma_r = sigma[r-1].copy()
@@ -167,60 +148,120 @@ def evaluation(x,w,classes,G,H,d):
 def Secure_Tree_Evaluation (parameter_file, input_df):
     
     tree_parameters = parse(parameter_file)
-    print(tree_parameters)
     d, classes, features, H, G, w = tree_parameters
    
     output = []
+    
+    #iterates over input_df and evaluates tree for each instance
     for i in range(len(input_df)):
         instance = input_df.iloc[i].tolist()
         instance.insert(0,-1)
-        print("X ", instance)
-
         class_label = evaluation(instance,w,classes,G,H,d)
         output.append(class_label)
     result = pd.Series(output)
     return(result)
  
+ 
 """ 
-Part 2: 
+Part 2: Evaluating Accuracy
 
+We use scikit-learn to create a trained decision tree
+of depth 3 for the diabetes.csv dataset.
+The parameters for the trained tree are encoded in trained_diabeters_dt.txt. 
+
+We evaluate the accuracy of the decision tree in a 
+non-secure setting and secure setting.
+
+Identical results for accuracy are produced in both settings, 
+verifying that secure evaluation was implemented correctly in Part 1. 
 """
  
 file = pd.read_csv("diabetes.csv")
 df = pd.DataFrame(file)
 if "SkinThickness" in df.columns:          
     df = df.drop(columns=["SkinThickness"])
-print(df.shape)
     
+
 feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI',
        'DiabetesPedigreeFunction', 'Age']
 target_names = ['Outcome']
 class_labels = ["No", "Yes"]
+
+# Creates dataset of feature values and of target values
 X = df[feature_names]
 y = df[target_names]
 
-print(X.shape)
-print(y.shape)
+
+# partition dataset into training data and testing data
+# 40% of data reserved for testing
+# Seeded for reproducibility
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=21)
 
+# Creates decision tree of depth 3, seeded for reproducibility
 dtree = DecisionTreeClassifier(criterion="entropy", random_state= 21, max_depth=3)
+
+# Trains dtree
 dtree.fit(X_train, y_train)
 
+#Evaluates dtree in non-secure setting
 y_pred = dtree.predict(X_test)
-y_pred_secure = Secure_Tree_Evaluation ("trained_diabetes_dt_input.txt", X_test)
 
-print(accuracy_score(y_test, y_pred)*100)
-print(accuracy_score(y_test, y_pred_secure)*100)
+#Evaluates dtree in Secure Setting
+#trained_diabetes_dt.txt contains parameters for dtree
+y_pred_secure = Secure_Tree_Evaluation ("trained_diabetes_dt.txt", X_test)
 
+print()
+print("Part 2: Evaluating Accuracy")
+
+print("Non-secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred)*100,2))
+print("Secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred_secure)*100,2))
+
+
+ 
+""" 
+Part 3: Evaluating Runtime
+
+We evaluate how the depth of a decision tree impacts runtime 
+of decision tree evaluation in a secure setting. 
+
+We randomly generate nodes, weights, and class labels to 
+create full decision trees of varying depths. 
+Runtime is measure in milliseconds for evalutioan
+of each tree for the same instance
 
 
 """
-Part 3: evaluating with multiple classes, instances are found in instances.txt
-"""
+print()
+print("Part 3: Evaluating Runtime")
+runtime = []
+classes = ["", "Yes", "No"]
 
-d, classes, features, H, G, w = parse("input.txt")
-with open('instances.txt', 'r') as f:
-    for line in f:
-        x = [-1] + list(map(float, (line.split())))
-        evaluation(x, w, classes, G, H, d)
-        
+# instance to be tested at each depth
+x = [-1, 4, 119, 69, 19, 30, 0.1, 29]
+
+
+depths = [3,5,7,9,11,15]
+for d in depths:
+    num_leaf = 2**d
+    num_internal = num_leaf -1
+
+    # Creates full dtree of depth d
+    # with random nodes, weights, and leaf class labels
+    H = random.choices(range(8), k=num_internal)
+    w = random.choices(range(100),k = num_internal)
+    G = random.choices(range(2), k = num_leaf)
+    
+    # Ensures indexing begins at 1 
+    H.insert(0,-1)
+    G.insert(0,-1)
+    w.insert(0,-1)
+    
+    #Executes secure evaluation and collects runtime data
+    t_0 = time()
+    evaluation(x,w,classes,G,H,d)
+    final_time = round(((time()-t_0)*1000),2)
+    runtime.append(final_time)
+    print("Runtime d =", d, ": ", final_time, " ms")
+
+
+
