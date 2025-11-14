@@ -21,3 +21,15 @@ Part 3) Evaluate Runtime of Trees with Varying Depths
 
 ## Instructions
 # Ensure that trained_diabetes_dt.txt is in the same directory as dt.py
+1. Specify your inputs inside trained_diabetes_dt.txt. Each line of the file should contain:
+Line 1: Your tree's depth
+Line 2: Your class labels, space-separated
+Line 3: Your input formatting (eg. if you typed (Pregnancies Glucose BloodPressure) then the first data point entered should be Pregnancies)
+Line 4: Your tree's attributes for internal nodes going from the root to its left child, then to its right child, then to the left child's left child...
+Line 5: Your tree's class labels for leaf nodes going from the leftmost leaf to the rightmost leaf
+Line 6: Your thresholds for each attribute, in the same order as line 4
+
+2. Run python dt.py
+   Part 1 classifies instances in diabetes.csv dataset using your tree
+   Part 2 evaluates your tree's accuracy
+   Part 3 tests runtime with respect to different tree depths, a visual plot is provided in Runtime.png

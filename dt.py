@@ -248,7 +248,7 @@ print("Part 3: Evaluating Runtime")
 runtime = []
 classes = ["", "Yes", "No"]
 
-# instance to be tested at each depth
+# the same instance to be tested at each depth
 x = [-1, 4, 119, 69, 19, 30, 0.1, 29]
 
 
