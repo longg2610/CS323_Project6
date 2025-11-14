@@ -32,8 +32,8 @@ Part 1: Implement Secure Decision Tree Evaluation
         - get_random_shares(value,)
         
 2) Secure_Tree_Evaluation (parameter_file, input_df)
-    - parses parameter file in format specified in README.md
-    - evaluates decision tree specified for multip
+    - parses parameter_file specifying tree in format specified in README.md
+    - evaluates decision tree specified for multiple instances stored in input_df
 
 
 """
@@ -150,6 +150,8 @@ def Secure_Tree_Evaluation (parameter_file, input_df):
     d, classes, features, H, G, w = tree_parameters
    
     output = []
+    
+    #iterates over input_df and evaluates tree for each instance
     for i in range(len(input_df)):
         instance = input_df.iloc[i].tolist()
         instance.insert(0,-1)
@@ -158,12 +160,20 @@ def Secure_Tree_Evaluation (parameter_file, input_df):
     result = pd.Series(output)
     return(result)
  
+ 
 """ 
 Part 2: Evaluating Accuracy
-In this section, we utilize 
 
+We use scikit-learn to create a trained decision tree
+of depth 3 for the diabetes.csv dataset.
+The parameters for the trained tree are encoded in trained_diabeters_dt.txt. 
+
+We evaluate the accuracy of the decision tree in a 
+non-secure setting and secure setting.
+
+Identical results for accuracy are produced in both settings, 
+verifying that secure evaluation was implemented correctly in Part 1. 
 """
-print("Part 2: Evaluating Accuracy")
  
 file = pd.read_csv("diabetes.csv")
 df = pd.DataFrame(file)
@@ -199,6 +209,9 @@ y_pred = dtree.predict(X_test)
 #trained_diabetes_dt.txt contains parameters for dtree
 y_pred_secure = Secure_Tree_Evaluation ("trained_diabetes_dt.txt", X_test)
 
+print()
+print("Part 2: Evaluating Accuracy")
+
 print("Non-secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred)*100,2))
 print("Secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred_secure)*100,2))
 
@@ -207,42 +220,47 @@ print("Secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred_s
 """ 
 Part 3: Evaluating Runtime
 
+We evaluate how the depth of a decision tree impacts runtime 
+of decision tree evaluation in a secure setting. 
+
+We randomly generate nodes, weights, and class labels to 
+create full decision trees of varying depths. 
+Runtime is measure in milliseconds for evalutioan
+of each tree for the same instance
+
 
 """
+print()
 print("Part 3: Evaluating Runtime")
 runtime = []
 classes = ["", "Yes", "No"]
+
+# instance to be tested at each depth
 x = [-1, 4, 119, 69, 19, 30, 0.1, 29]
 
-d = 3 
-H = [-1, 6, 2, 4, 3, 1, 5, 7]  
-w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
-G = [-1,1,0,1,0,1,0,1,0] 
-t_0 = time()
-evaluation(x,w,classes,G,H,d)
 
-final_time_d3 = round((time()-t_0)*1000,2)
-print("Runtime d = 3: final_time_d3 ", final_time_d3 )
-runtime.append(final_time_d3)
-
-depths = [5,7,9,11,15]
+depths = [3,5,7,9,11,15]
 for d in depths:
     num_leaf = 2**d
     num_internal = num_leaf -1
 
+    # Creates full dtree of depth d
+    # with random nodes, weights, and leaf class labels
     H = random.choices(range(8), k=num_internal)
     w = random.choices(range(100),k = num_internal)
     G = random.choices(range(2), k = num_leaf)
     
+    # Ensures indexing begins at 1 
     H.insert(0,-1)
     G.insert(0,-1)
     w.insert(0,-1)
     
+    #Executes secure evaluation and collects runtime data
     t_0 = time()
     evaluation(x,w,classes,G,H,d)
     final_time = round(((time()-t_0)*1000),2)
     runtime.append(final_time)
-    print("Runtime d =", d, ": ", final_time)
+    print("Runtime d =", d, ": ", final_time, " ms")
 
 
 
