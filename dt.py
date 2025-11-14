@@ -8,6 +8,7 @@ with Secure Multiparty Computation.
 Part 1) Implement Secure Decision Tree Evaluation
 Part 2) Test Accuracy with Non-secure and Secure Evaluation of Trained tree 
 Part 3) Evaluate Runtime of Trees with Varying Depths
+Part 4) Testing Area for Dr. Truex
 
 '''
 import random
@@ -20,6 +21,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 import matplotlib.pyplot as plt
 from time import time
+
+
+#---------------------------------------------------------------------------------
+
 
 """ 
 Part 1: Implement Secure Decision Tree Evaluation
@@ -170,10 +175,12 @@ def Secure_Tree_Evaluation (parameter_file, input_df):
         instance.insert(0,-1)   # dummy value at the front
         class_label = evaluation(instance,w,classes,G,H,d)
         output.append(class_label)
-    result = pd.Series(output)
+    result = output
     return(result)
  
  
+#---------------------------------------------------------------------------------
+
 """ 
 Part 2: Evaluating Accuracy
 
@@ -186,50 +193,54 @@ non-secure setting and secure setting.
 
 Identical results for accuracy are produced in both settings, 
 verifying that secure evaluation was implemented correctly in Part 1. 
+
 """
- 
-file = pd.read_csv("diabetes.csv")
-df = pd.DataFrame(file)
-if "SkinThickness" in df.columns:          
-    df = df.drop(columns=["SkinThickness"])
-    
+def part_2():
+    file = pd.read_csv("diabetes.csv")
+    df = pd.DataFrame(file)
+    if "SkinThickness" in df.columns:          
+        df = df.drop(columns=["SkinThickness"])
+        
 
-feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI',
-       'DiabetesPedigreeFunction', 'Age']
-target_names = ['Outcome']
-class_labels = ["No", "Yes"]
+    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI',
+        'DiabetesPedigreeFunction', 'Age']
+    target_names = ['Outcome']
+    class_labels = ["No", "Yes"]
 
-# Creates dataset of feature values and of target values
-X = df[feature_names]
-y = df[target_names]
-
-
-# partition dataset into training data and testing data
-# 40% of data reserved for testing
-# Seeded for reproducibility
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=21)
-
-# Creates decision tree of depth 3, seeded for reproducibility
-dtree = DecisionTreeClassifier(criterion="entropy", random_state= 21, max_depth=3)
-
-# Trains dtree
-dtree.fit(X_train, y_train)
-
-#Evaluates dtree in non-secure setting
-y_pred = dtree.predict(X_test)
-
-#Evaluates dtree in Secure Setting
-#trained_diabetes_dt.txt contains parameters for dtree
-y_pred_secure = Secure_Tree_Evaluation ("trained_diabetes_dt.txt", X_test)
-
-print()
-print("Part 2: Evaluating Accuracy")
-
-print("Non-secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred)*100,2))
-print("Secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred_secure)*100,2))
+    # Creates dataset of feature values and of target values
+    X = df[feature_names]
+    y = df[target_names]
 
 
- 
+    # partition dataset into training data and testing data
+    # 40% of data reserved for testing
+    # Seeded for reproducibility
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=21)
+
+
+    # Creates decision tree of depth 3, seeded for reproducibility
+    dtree = DecisionTreeClassifier(criterion="entropy", random_state= 21, max_depth=3)
+
+    # Trains dtree
+    dtree.fit(X_train, y_train)
+
+    #Evaluates dtree in non-secure setting
+    y_pred = dtree.predict(X_test)
+
+    #Evaluates dtree in Secure Setting
+    #trained_diabetes_dt.txt contains parameters for dtree
+    print("Part 1: Secure Decision Tree Evaluation")
+    y_pred_secure = pd.Series(Secure_Tree_Evaluation ("trained_diabetes_dt.txt", X_test))
+    print()
+    print("Part 2: Evaluating Accuracy")
+
+    print("Non-secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred)*100,2))
+    print("Secure Tree Evaluation Accuracy: ", round(accuracy_score(y_test, y_pred_secure)*100,2))
+
+
+
+#---------------------------------------------------------------------------------
+
 """ 
 Part 3: Evaluating Runtime
 
@@ -237,58 +248,136 @@ We evaluate how the depth of a decision tree impacts runtime
 of decision tree evaluation in a secure setting. 
 
 We randomly generate nodes, weights, and class labels to 
-create full decision trees of varying depths. 
+create full decision trees of d = 3-15. 
 Runtime is measured in milliseconds for evaluation
-of each tree for the same instance
+of each tree for the same instance and graphed.
+
 
 
 """
-print()
-print("Part 3: Evaluating Runtime")
-runtime = []
-classes = ["", "Yes", "No"]
+def part_3(): 
+    print()
+    print("Part 3: Evaluating Runtime")
+    runtime = []
+    classes = ["", "Yes", "No"]
 
-# the same instance to be tested at each depth
-x = [-1, 4, 119, 69, 19, 30, 0.1, 29]
+    # the same instance to be tested at each depth
+    x = [-1, 4, 119, 69, 19, 30, 0.1, 29]
 
 
-depths = [3,5,7,9,11,15]
-depths = [3,4,5,6,7,8,9,10,11,12,13,14,15]
-for d in depths:
-    num_leaf = 2**d
-    num_internal = num_leaf -1
+    depths = [3,4,5,6,7,8,9,10,11,12,13,14,15]
+    for d in depths:
+        num_leaf = 2**d
+        num_internal = num_leaf -1
 
-    # Creates full dtree of depth d
-    # with random nodes, weights, and leaf class labels
-    H = random.choices(range(8), k=num_internal)
-    w = random.choices(range(100),k = num_internal)
-    G = random.choices(range(2), k = num_leaf)
+        # Creates full dtree of depth d
+        # with random nodes, weights, and leaf class labels
+        H = random.choices(range(8), k=num_internal)
+        w = random.choices(range(100),k = num_internal)
+        G = random.choices(range(2), k = num_leaf)
+        
+        # Ensures indexing begins at 1 
+        H.insert(0,-1)
+        G.insert(0,-1)
+        w.insert(0,-1)
+        
+        #Executes secure evaluation and collects runtime data
+        t_0 = time()
+        evaluation(x,w,classes,G,H,d)
+        final_time = round(((time()-t_0)*1000),2)
+        runtime.append(final_time)
+        print("Runtime d =", d, ": ", final_time, " ms")
+
+    def plot(depths, runtime):
+        # Create line chart
+        plt.figure(figsize=(10,7))
+        plt.plot(depths, runtime, marker='o', linestyle='-', color='blue', label='Depths vs Runtime')
+
+        # Labels and title
+        plt.xlabel("Depth")
+        plt.ylabel("Runtime (ms)")
+        plt.title("Runtimes with different Decision Tree Depths")
+        plt.grid(True)
+        plt.legend()
+
+        # Show the plot
+        plt.tight_layout()
+        plt.savefig("./Runtime.png")
+        
+    plot(depths, runtime)
     
-    # Ensures indexing begins at 1 
-    H.insert(0,-1)
-    G.insert(0,-1)
-    w.insert(0,-1)
     
-    #Executes secure evaluation and collects runtime data
-    t_0 = time()
-    evaluation(x,w,classes,G,H,d)
-    final_time = round(((time()-t_0)*1000),2)
-    runtime.append(final_time)
-    print("Runtime d =", d, ": ", final_time, " ms")
+    
+#---------------------------------------------------------------------------------
 
-def plot(depths, runtime):
-    # Create line chart
-    plt.figure(figsize=(10,7))
-    plt.plot(depths, runtime, marker='o', linestyle='-', color='blue', label='Depths vs Runtime')
 
-    # Labels and title
-    plt.xlabel("Depth")
-    plt.ylabel("Runtime (ms)")
-    plt.title("Runtimes with different Decision Tree Depths")
-    plt.grid(True)
-    plt.legend()
+"""
+Part 4: For Dr. Truex! 
+Area for evaluating a new tree or dataset
 
-    # Show the plot
-    plt.tight_layout()
-    plt.savefig("./Runtime.png")
-plot(depths, runtime)
+1) evaluation(x,w,classes,G,H,d)
+    - can be called independently from Secure_Tree_Evaluation
+    - can specify tree parameters rather than from parameter file
+    - best for evaluating one instance 
+        
+2) Secure_Tree_Evaluation (parameter_file, input_df)
+    - parses parameter_file specifying tree in format specified in README.md
+    - evaluates decision tree specified for multiple instances stored in input_df
+
+"""
+def part_4():
+    print()
+
+    print("Testing Area for Dr. Truex")
+    
+    # 1) Specifying tree parameters in code
+
+    # ALL PARAMETERS SHOULD HAVE A PLACEHOLDER VALUE AT INDEX 0
+    d = 3
+    # H maps internal nodes to feature indices, H(1) = index of Pregnancies in features array
+    H = [-1, 6, 2, 4, 3, 1, 5, 7]  
+    # w contains the thresholds/ weights for each internal node in H
+    w = [-1 , 0.15, 120, 20, 70, 5, 28, 30]
+
+    classes = [" ", "Yes", "No"]
+    # G maps leaf indices to class label indices
+    G = [-1,1,0,1,0,1,0,1,0] 
+
+    features = ["", "Pregnancies" , "Glucose", "BloodPressure", "Insulin", "BMI", "DiabetesPedigreeFunction" , "Age"]    
+    # input follows the order of features
+    x = [-1, 4, 119, 69, 19, 30, 0.1, 29]   
+
+    print("Inline Parameter Specification: ")
+
+    results = evaluation(x,w,classes,G,H,d)
+
+    print()
+
+# 2) specifying tree parameter through input file and instances in dataframe
+
+    instances = [[0,0,0], [0,0,1], [0,1,0], [0,1,1],
+                [1,0,0], [1,0,1], [1,1,0], [1,1,1]]
+
+    sample_df = pd.DataFrame(instances, columns = ["x1","x2","x3"])
+
+    #ensure sample_tree.txt is in format specified by README.md
+    print("sample_tree.txt Parameter Specification")
+
+    results = Secure_Tree_Evaluation ("sample_tree.txt", sample_df)
+
+
+#---------------------------------------------------------------------------------
+
+
+def main(): 
+    
+    # Part 2: Evaluating Accuracy for Trained Tree
+    part_2()
+    
+    # Part 3: Evaluating Runtime for Trees of Varying Depths
+    part_3()
+    
+    # Part 4: Testing Area for different trees and datasets
+    part_4()
+    
+main()
