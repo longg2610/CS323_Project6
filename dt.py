@@ -117,7 +117,8 @@ def evaluation(x,w,classes,G,H,d):
     # get comparison result for leaf i using non-private Distributed Comparison
     z_i = [-1]
     for i in range(1, len(H)):
-        z_i.append(int(x_H[i] <= w[i]))
+        z_i.append(int(w[i] >  x_H[i]))     # x_H[i] <= w[i]
+        # print(w[i], x_H[i])
     z_i_shares = [get_random_shares(z) for z in z_i]
     
     alpha = math.ceil(math.log2(len(classes)-1))    # number of bits needed to represent all classes
@@ -213,7 +214,7 @@ def part_2():
 
 
     # partition dataset into training data and testing data
-    # 40% of data reserved for testing
+    # 30% of data reserved for testing
     # Seeded for reproducibility
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=21)
 
@@ -328,7 +329,7 @@ Area for evaluating a new tree or dataset
 def part_4():
     print()
 
-    print("Testing Area for Dr. Truex")
+    print("Part 4: Testing Area for Dr. Truex")
     
     # 1) Specifying tree parameters in code
 
